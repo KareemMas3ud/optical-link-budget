@@ -5,3 +5,5 @@ Fiber Optic Project Groups.pdf
 __pycache__/
 *.pyc
 project_spec.md
+*.docx
+build_word_report.py
