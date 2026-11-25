@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive optical fiber attenuation and link power budget analyzer for 26ECE31H Fiber Optic Communications.">
+  <meta name="theme-color" content="#0F172A">
+  <title>Optical Link Power Budget Analyzer — 26ECE31H (Group 9)</title>
+
+  <!-- Modern technical typography (IBM Plex Sans + JetBrains Mono) with crisp offline fallbacks -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#workspace">Skip to analytical workspace</a>
+
+  <!-- Dark Precision Instrument Top Bar (#0F172A for White-Text BUE Logo Contrast) -->
+  <header class="instrument-bar" role="banner">
+    <div class="instrument-identity">
+      <img src="/bue-logo.png" alt="The British University in Egypt" class="bue-logo">
+      <span class="header-divider" aria-hidden="true"></span>
+      <div class="instrument-titles">
+        <h1>Optical Link Power Budget Analyzer</h1>
+        <span class="instrument-meta">26ECE31H Fiber Optic Communications &mdash; Option 2</span>
+      </div>
+    </div>
+
+    <div class="instrument-actions">
+      <div class="preset-picker">
+        <label for="preset-select">Preset</label>
+        <select id="preset-select" aria-label="Load reference optical link preset">
+          <option value="">Loading presets...</option>
+        </select>
+      </div>
+
+      <button type="button" id="btn-validate" class="btn btn-dark-ghost">
+        Verify Agrawal 5e
+      </button>
+
+      <div class="export-wrap" id="export-dropdown">
+        <button type="button" id="btn-export-toggle" class="btn btn-dark-primary" aria-haspopup="true" aria-expanded="false">
+          Export
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <div class="export-menu" id="export-menu" role="menu" hidden>
+          <button type="button" role="menuitem" id="export-csv">Export link budget CSV</button>
+          <button type="button" role="menuitem" id="export-json">Export configuration JSON</button>
+          <button type="button" role="menuitem" id="export-svg">Export Power-Level SVG</button>
+          <button type="button" role="menuitem" id="export-png">Export Power-Level PNG (HiDPI)</button>
+          <hr class="menu-rule">
+          <button type="button" role="menuitem" id="export-print">Print or save PDF summary</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Two-Pane Lab Bench Shell -->
+  <div class="bench-shell">
+    <!-- Left Precision Control Rail (Core Parameters + Collapsed Advanced Drawers) -->
+    <aside class="control-rail" aria-label="Optical link controls">
+      <!-- Mode Switcher: Analysis vs. Design -->
+      <div class="mode-toggle" role="tablist" aria-label="Operating mode">
+        <button type="button" role="tab" id="tab-analysis" class="mode-tab active" aria-selected="true">
+          Analysis
+        </button>
+        <button type="button" role="tab" id="tab-design" class="mode-tab" aria-selected="false">
+          Design
+        </button>
+      </div>
+
+      <!-- Design Mode Controls (strictly hidden in Analysis mode) -->
+      <section class="control-section design-box" id="design-controls" hidden>
+        <div class="section-head">
+          <h2>Design objective</h2>
+        </div>
+
+        <div class="seg-control" role="radiogroup" aria-label="Design solver objective">
+          <button type="button" class="seg-opt active" data-design-mode="max_reach" aria-checked="true">
+            Solve max reach
+          </button>
+          <button type="button" class="seg-opt" data-design-mode="required_amplifiers" aria-checked="false">
+            Solve amplifiers
+          </button>
+        </div>
+
+        <div class="field-single" id="design-target-length-wrap" hidden>
+          <label for="design-target-length">Target link length</label>
+          <div class="metric-input">
+            <input type="number" id="design-target-length" value="400" min="0" max="20000" step="1">
+            <span class="unit">km</span>
+          </div>
+        </div>
+
+        <button type="button" id="btn-run-design" class="btn btn-ink btn-block">
+          Solve max reach
+        </button>
+      </section>
+
+      <!-- Core Section 1: Wavelength & Fiber -->
+      <section class="control-section">
+        <div class="section-head">
+          <h2>Wavelength &amp; fiber</h2>
+          <span class="state-chip chip-warn" id="override-badge" hidden>Override</span>
+        </div>
+
+        <div class="wl-strip" role="group" aria-label="Standard optical windows">
+          <button type="button" class="wl-btn wl-850" data-wl="850">850 nm</button>
+          <button type="button" class="wl-btn wl-1310" data-wl="1310">1310 nm</button>
+          <button type="button" class="wl-btn wl-1550 active" data-wl="1550">1550 nm</button>
+        </div>
+
+        <div class="field-pair">
+          <div class="field">
+            <label for="wavelength-nm">Wavelength &lambda;</label>
+            <div class="metric-input">
+              <input type="number" id="wavelength-nm" value="1550" min="600" max="1800" step="5">
+              <span class="unit">nm</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="fiber-preset">Fiber model</label>
+            <select id="fiber-preset">
+              <option value="smf28_conventional">SMF-28 (G.652.B)</option>
+              <option value="smf28_dry">Dry SMF (G.652.D)</option>
+              <option value="mmf_grin_50">GRIN MMF (50/125)</option>
+              <option value="custom">Custom parameters</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Core Section 2: Transceiver, Margin & Distance -->
+      <section class="control-section">
+        <div class="section-head">
+          <h2>Power budget &amp; distance</h2>
+        </div>
+
+        <div class="field-pair">
+          <div class="field">
+            <label for="tx-power">TX power P<sub>tx</sub></label>
+            <div class="metric-input">
+              <input type="number" id="tx-power" value="2" min="-40" max="30" step="0.5">
+              <span class="unit">dBm</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="rx-sens">RX sensitivity P<sub>rec</sub></label>
+            <div class="metric-input">
+              <input type="number" id="rx-sens" value="-28" min="-70" max="0" step="0.5">
+              <span class="unit">dBm</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-pair">
+          <div class="field">
+            <label for="sys-margin">System margin M<sub>s</sub></label>
+            <div class="metric-input">
+              <input type="number" id="sys-margin" value="4" min="0" max="30" step="0.5">
+              <span class="unit">dB</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="fiber-length">Fiber length L</label>
+            <div class="metric-input" id="wrap-fiber-length">
+              <input type="number" id="fiber-length" value="400" min="0" max="20000" step="0.01">
+              <span class="unit">km</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Core Section 3: Link Components -->
+      <section class="control-section">
+        <div class="section-head">
+          <h2>Link components</h2>
+        </div>
+
+        <div class="field-pair">
+          <div class="field">
+            <label for="num-connectors">Connectors</label>
+            <div class="metric-input">
+              <input type="number" id="num-connectors" value="2" min="0" max="100" step="1">
+              <span class="unit">qty</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="loss-connector">Loss / connector</label>
+            <div class="metric-input">
+              <input type="number" id="loss-connector" value="0.5" min="0" max="10" step="0.05">
+              <span class="unit">dB</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-pair">
+          <div class="field" id="splice-fixed-wrap">
+            <label for="num-splices">Splices</label>
+            <div class="metric-input">
+              <input type="number" id="num-splices" value="20" min="0" max="500" step="1">
+              <span class="unit">qty</span>
+            </div>
+          </div>
+          <div class="field" id="splice-reel-core-note" hidden>
+            <label for="reel-length-mirror">Splices (reel)</label>
+            <div class="metric-input">
+              <input type="text" id="reel-length-mirror" value="Auto" readonly>
+              <span class="unit">reel</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="loss-splice">Loss / splice</label>
+            <div class="metric-input">
+              <input type="number" id="loss-splice" value="0.08" min="0" max="5" step="0.02">
+              <span class="unit">dB</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-single" id="splitter-core-wrap">
+          <label for="split-ratio">Optical splitter (1:N)</label>
+          <select id="split-ratio">
+            <option value="1">1:1 &mdash; None (0.00 dB)</option>
+            <option value="2">1:2 (3.01 dB + excess)</option>
+            <option value="4">1:4 (6.02 dB + excess)</option>
+            <option value="8">1:8 (9.03 dB + excess)</option>
+            <option value="16">1:16 (12.04 dB + excess)</option>
+            <option value="32">1:32 (15.05 dB + excess)</option>
+            <option value="64">1:64 (18.06 dB + excess)</option>
+          </select>
+        </div>
+
+        <div class="field-pair">
+          <div class="field">
+            <label for="num-amps">In-line amplifiers</label>
+            <div class="metric-input" id="wrap-num-amps">
+              <input type="number" id="num-amps" value="3" min="0" max="200" step="1">
+              <span class="unit">qty</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="amp-gain">Gain / amplifier</label>
+            <div class="metric-input">
+              <input type="number" id="amp-gain" value="20" min="0" max="45" step="0.5">
+              <span class="unit">dB</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Collapsed Drawer 1: Advanced Fiber Physics & Attenuation Override -->
+      <details class="adv-drawer" id="drawer-fiber-physics">
+        <summary>
+          <span>Advanced fiber physics &amp; override</span>
+          <span class="drawer-badge" id="drawer-fiber-badge" hidden>Active</span>
+        </summary>
+        <div class="drawer-body">
+          <label class="check-row">
+            <input type="checkbox" id="alpha-override-enabled">
+            <span>Direct cable attenuation override (&alpha;<sub>f</sub>)</span>
+          </label>
+
+          <div class="field-single" id="alpha-override-wrap" hidden>
+            <label for="alpha-override-val">Specified &alpha;<sub>f</sub></label>
+            <div class="metric-input">
+              <input type="number" id="alpha-override-val" value="3.5" min="0.01" max="50" step="0.05">
+              <span class="unit">dB/km</span>
+            </div>
+          </div>
+
+          <div class="field-pair">
+            <div class="field">
+              <label for="fp-cr">Rayleigh C<sub>R</sub></label>
+              <div class="metric-input">
+                <input type="number" id="fp-cr" value="0.85" min="0.1" max="5.0" step="0.05">
+                <span class="unit">dB&middot;&mu;m<sup>4</sup>/km</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="fp-oh">OH&minus; peak</label>
+              <div class="metric-input">
+                <input type="number" id="fp-oh" value="15" min="0" max="1000" step="1">
+                <span class="unit">ppb</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-pair">
+            <div class="field">
+              <label for="fp-bend-r">Bend radius R</label>
+              <div class="metric-input">
+                <input type="number" id="fp-bend-r" value="30" min="1" max="200" step="0.5">
+                <span class="unit">mm</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="fp-micro">Microbending</label>
+              <div class="metric-input">
+                <input type="number" id="fp-micro" value="0" min="0" max="20" step="0.01">
+                <span class="unit">dB/km</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-single">
+            <label for="fp-wg">Waveguide imperfection floor</label>
+            <div class="metric-input">
+              <input type="number" id="fp-wg" value="0.015" min="0" max="1" step="0.005">
+              <span class="unit">dB/km</span>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <!-- Collapsed Drawer 2: Advanced Link & Hardware Limits -->
+      <details class="adv-drawer" id="drawer-hardware-limits">
+        <summary>
+          <span>Advanced link &amp; hardware limits</span>
+          <span class="drawer-badge" id="drawer-hw-badge" hidden>Active</span>
+        </summary>
+        <div class="drawer-body">
+          <label class="check-row">
+            <input type="checkbox" id="rx-overload-enabled">
+            <span>Enforce receiver overload limit</span>
+          </label>
+          <div class="field-single" id="rx-overload-wrap" hidden>
+            <label for="rx-overload-val">RX overload limit</label>
+            <div class="metric-input">
+              <input type="number" id="rx-overload-val" value="-3" min="-30" max="20" step="0.5">
+              <span class="unit">dBm</span>
+            </div>
+          </div>
+
+          <div class="drawer-subhead">Splice placement model</div>
+          <div class="seg-control compact" role="radiogroup" aria-label="Splice placement mode">
+            <button type="button" class="seg-opt active" data-splice-mode="fixed" aria-checked="true">Fixed count</button>
+            <button type="button" class="seg-opt" data-splice-mode="reel" aria-checked="false">Reel spacing</button>
+          </div>
+          <div class="field-single" id="splice-reel-wrap" hidden>
+            <label for="reel-length">Cable reel spacing L<sub>reel</sub></label>
+            <div class="metric-input">
+              <input type="number" id="reel-length" value="2" min="0.1" max="100" step="0.5">
+              <span class="unit">km</span>
+            </div>
+          </div>
+
+          <div class="drawer-subhead">Splitter model &amp; position</div>
+          <div class="seg-control compact" role="radiogroup" aria-label="Splitter loss mode">
+            <button type="button" class="seg-opt active" data-splitter-mode="ratio" aria-checked="true">1:N ratio</button>
+            <button type="button" class="seg-opt" data-splitter-mode="manual" aria-checked="false">Manual dB</button>
+          </div>
+          <div class="field-pair">
+            <div class="field" id="splitter-excess-wrap">
+              <label for="splitter-excess">Excess loss</label>
+              <div class="metric-input">
+                <input type="number" id="splitter-excess" value="0.5" min="0" max="10" step="0.1">
+                <span class="unit">dB</span>
+              </div>
+            </div>
+            <div class="field" id="splitter-manual-wrap" hidden>
+              <label for="splitter-manual-db">Manual loss</label>
+              <div class="metric-input">
+                <input type="number" id="splitter-manual-db" value="0" min="0" max="40" step="0.1">
+                <span class="unit">dB</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="splitter-pos-pct">Location</label>
+              <div class="metric-input">
+                <input type="number" id="splitter-pos-pct" value="80" min="5" max="95" step="5">
+                <span class="unit">% of L</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="drawer-subhead">Amplifier saturation</div>
+          <label class="check-row">
+            <input type="checkbox" id="amp-sat-enabled" checked>
+            <span>Clamp EDFA output at P<sub>sat,out</sub></span>
+          </label>
+          <div class="field-single" id="amp-sat-wrap">
+            <label for="amp-sat-out">Max output P<sub>sat,out</sub></label>
+            <div class="metric-input">
+              <input type="number" id="amp-sat-out" value="17" min="-10" max="30" step="0.5">
+              <span class="unit">dBm</span>
+            </div>
+          </div>
+        </div>
+      </details>
+    </aside>
+
+    <!-- Right Analytical Instrument Stage -->
+    <main class="instrument-stage" id="workspace">
+      <div class="inline-error" id="error-banner" role="alert" hidden></div>
+
+      <!-- Unified Flat Optical Meter Verdict & Telemetry Strip -->
+      <section class="meter-strip" id="diagnostic-strip" aria-live="polite">
+        <div class="verdict-row verdict-pass" id="verdict-block">
+          <div class="verdict-main">
+            <span class="verdict-stamp" id="verdict-pill">PASS</span>
+            <div class="verdict-text">
+              <p class="verdict-line" id="verdict-headline">Evaluating link budget...</p>
+              <p class="verdict-warn" id="verdict-warnings" hidden></p>
+            </div>
+          </div>
+
+          <!-- Contextual Analysis-Mode Quick-Fix Actions (shown ONLY when FAIL in Analysis Mode) -->
+          <div class="verdict-quickfix" id="verdict-quickfix" hidden>
+            <button type="button" id="btn-quick-max-reach" class="btn btn-fix-outline">
+              Apply Max Reach (L<sub>max</sub>)
+            </button>
+            <button type="button" id="btn-quick-add-amps" class="btn btn-fix-solid">
+              Auto-Add Amplifiers
+            </button>
+          </div>
+        </div>
+
+        <dl class="readout-rail">
+          <div class="readout-item">
+            <dt>Received power P<sub>rx</sub></dt>
+            <dd class="readout-num" id="kpi-prx">&mdash;</dd>
+            <dd class="readout-sub" id="kpi-prx-mw">&mdash;</dd>
+          </div>
+          <div class="readout-item">
+            <dt>Net margin M<sub>net</sub></dt>
+            <dd class="readout-num" id="kpi-mnet">&mdash;</dd>
+            <dd class="readout-sub" id="kpi-mgross">&mdash;</dd>
+          </div>
+          <div class="readout-item">
+            <dt>Channel loss C<sub>L</sub></dt>
+            <dd class="readout-num" id="kpi-cl">&mdash;</dd>
+            <dd class="readout-sub" id="kpi-gain">&mdash;</dd>
+          </div>
+          <div class="readout-item">
+            <dt>Attenuation &alpha;(&lambda;)</dt>
+            <dd class="readout-num" id="kpi-alpha">&mdash;</dd>
+            <dd class="readout-sub" id="kpi-alpha-sub">&mdash;</dd>
+          </div>
+          <div class="readout-item">
+            <dt>Max reach L<sub>max</sub></dt>
+            <dd class="readout-num" id="kpi-lmax">&mdash;</dd>
+            <dd class="readout-sub" id="kpi-lmax-sub">&mdash;</dd>
+          </div>
+        </dl>
+      </section>
+
+      <!-- Design Solution Bar (STRICTLY hidden until a Design Mode calculation completes) -->
+      <section class="design-result-strip" id="design-result-bar" hidden>
+        <div class="design-result-copy">
+          <span class="design-result-label" id="design-result-tag">Design solution</span>
+          <p class="design-result-summary" id="design-result-summary"></p>
+          <div class="design-result-metrics" id="design-result-metrics"></div>
+        </div>
+        <div class="design-result-btns">
+          <button type="button" id="btn-apply-design" class="btn btn-ink">Apply to link</button>
+          <button type="button" id="btn-dismiss-design" class="btn btn-quiet">Dismiss</button>
+        </div>
+      </section>
+
+      <!-- Primary Focal Visualization: Power-Level Diagram P(z) -->
+      <section class="stage-block stage-focal">
+        <div class="block-head">
+          <h2>Power-level diagram P(z)</h2>
+          <div class="block-tools">
+            <span class="trace-readout" id="power-hover-readout">Move cursor across trace to inspect z &amp; P(z)</span>
+            <button type="button" class="btn-export-mini" data-export-chart="chart-power-level" title="Download Power-Level SVG">
+              SVG
+            </button>
+          </div>
+        </div>
+        <div class="plot-canvas" id="chart-power-level"></div>
+      </section>
+
+      <!-- Secondary Analytical Views (Clean Hairline Tabs) -->
+      <section class="stage-block stage-secondary">
+        <div class="view-tabs" role="tablist" aria-label="Secondary optical analysis views">
+          <button type="button" role="tab" class="view-tab active" data-view-tab="loss" aria-selected="true">
+            Loss breakdown
+          </button>
+          <button type="button" role="tab" class="view-tab" data-view-tab="margin" aria-selected="false">
+            Margin vs. length (850 / 1310 / 1550 nm)
+          </button>
+          <button type="button" role="tab" class="view-tab" data-view-tab="spectrum" aria-selected="false">
+            Attenuation spectrum &alpha;(&lambda;)
+          </button>
+          <button type="button" role="tab" class="view-tab" data-view-tab="ledger" aria-selected="false">
+            Power budget ledger
+          </button>
+        </div>
+
+        <!-- Tab 1: Loss Breakdown + Fiber Mechanism Share -->
+        <div class="view-pane active" id="pane-loss" role="tabpanel">
+          <div class="pane-head">
+            <span class="pane-note" id="caption-loss">Itemized dB share of available optical power budget.</span>
+            <button type="button" class="btn-export-mini" data-export-chart="chart-loss-breakdown">SVG</button>
+          </div>
+          <div class="plot-canvas" id="chart-loss-breakdown"></div>
+          <div class="mech-strip" id="fiber-mech-strip"></div>
+        </div>
+
+        <!-- Tab 2: Link Margin vs. Length across 850 / 1310 / 1550 nm -->
+        <div class="view-pane" id="pane-margin" role="tabpanel" hidden>
+          <div class="pane-head">
+            <span class="pane-note">Net link margin M<sub>net</sub>(L) across standard telecom windows against the 0 dB pass/fail line.</span>
+            <button type="button" class="btn-export-mini" data-export-chart="chart-margin-length">SVG</button>
+          </div>
+          <div class="plot-canvas" id="chart-margin-length"></div>
+        </div>
+
+        <!-- Tab 3: Silica Fiber Attenuation Spectrum (800-1700 nm) -->
+        <div class="view-pane" id="pane-spectrum" role="tabpanel" hidden>
+          <div class="pane-head">
+            <span class="trace-readout" id="spectrum-hover-readout">Active &lambda; highlighted</span>
+            <button type="button" class="btn-export-mini" data-export-chart="chart-spectrum">SVG</button>
+          </div>
+          <div class="plot-canvas" id="chart-spectrum"></div>
+        </div>
+
+        <!-- Tab 4: Itemized Power Budget Ledger -->
+        <div class="view-pane" id="pane-ledger" role="tabpanel" hidden>
+          <div class="pane-head">
+            <span class="pane-note">Exact equation breakdown per Agrawal 5th Ed., Section 5.2.3, Eqs. (5.2.2)&ndash;(5.2.3).</span>
+          </div>
+          <div class="table-wrap">
+            <table class="ledger-table" id="ledger-table">
+              <thead>
+                <tr>
+                  <th>Budget element</th>
+                  <th>Formula / Specification</th>
+                  <th class="num">Value</th>
+                  <th class="num">Role</th>
+                </tr>
+              </thead>
+              <tbody id="ledger-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Refined Academic Credits Footer -->
+      <footer class="academic-footer" role="contentinfo">
+        <div class="credit-group">
+          <span class="credit-label">Prepared By:</span>
+          <span class="credit-names">Kareem Mohammed (238253) &amp; Rawan Essam (235067) &mdash; Group 9</span>
+        </div>
+        <div class="credit-group">
+          <span class="credit-label">Supervised By:</span>
+          <span class="credit-names">Prof. Tamer Mekkawy &amp; Eng. Salma Samy</span>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Agrawal 5th Edition Live Validation Modal -->
+  <div class="modal-backdrop" id="validate-modal" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h2 id="modal-title">Agrawal 5th Ed. automated validation suite</h2>
+          <p class="modal-sub">Live execution of <code>validate_agrawal.py</code> against verified textbook benchmarks (&lt; 0.1% tolerance).</p>
+        </div>
+        <button type="button" id="btn-close-modal" class="btn btn-quiet">Close</button>
+      </div>
+      <div class="modal-summary" id="validate-summary">Running validation checks...</div>
+      <div class="modal-quick-presets">
+        <span>Load worked example:</span>
+        <button type="button" class="btn btn-quiet btn-sm" data-load-preset="agrawal_table5_1_laser">Table 5.1 Laser + p-i-n</button>
+        <button type="button" class="btn btn-quiet btn-sm" data-load-preset="agrawal_table5_1_led">Table 5.1 LED + p-i-n</button>
+        <button type="button" class="btn btn-quiet btn-sm" data-load-preset="agrawal_table5_1_led_apd">Sec. 5.2.3 LED + APD</button>
+      </div>
+      <div class="modal-table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>Benchmark &amp; test case</th>
+              <th class="num">Expected (Agrawal 5e)</th>
+              <th class="num">Computed</th>
+              <th class="num">Error</th>
+              <th class="num">Result</th>
+            </tr>
+          </thead>
+          <tbody id="validate-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Notification Banner (Apply-to-Link, Quick-Fix & Export Feedback) -->
+  <div class="confirm-toast" id="toast" role="status" aria-live="polite" hidden>
+    <div class="confirm-toast-accent" id="toast-accent"></div>
+    <div class="confirm-toast-body">
+      <div class="confirm-toast-title" id="toast-title">Updated</div>
+      <div class="confirm-toast-detail" id="toast-detail"></div>
+    </div>
+    <button type="button" class="confirm-toast-close" id="toast-close" aria-label="Dismiss notification">&times;</button>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
