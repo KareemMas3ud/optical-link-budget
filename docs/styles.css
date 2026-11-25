@@ -1405,17 +1405,277 @@ code {
 }
 
 @media (max-width: 900px) {
+  html,
+  body {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+  .instrument-bar {
+    position: relative;
+    height: auto;
+    min-height: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+  .instrument-identity {
+    width: 100%;
+    min-width: 0;
+    gap: 12px;
+  }
+  .bue-logo {
+    height: 30px;
+    flex-shrink: 0;
+  }
+  .instrument-titles {
+    min-width: 0;
+    flex: 1;
+  }
+  .instrument-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+  .preset-picker {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+  }
+  .preset-picker label {
+    flex-shrink: 0;
+  }
+  .preset-picker select {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .instrument-actions > .btn,
+  .export-wrap,
+  .export-wrap > .btn {
+    width: 100%;
+    min-width: 0;
+  }
+  .export-menu {
+    right: 0;
+    left: auto;
+    max-width: calc(100vw - 28px);
+  }
   .bench-shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: auto;
+    width: 100%;
+    max-width: 100%;
   }
   .control-rail {
     position: static;
     max-height: none;
+    height: auto;
+    overflow: visible;
+    min-width: 0;
+    width: 100%;
     border-right: 0;
     border-bottom: 1px solid var(--rule);
   }
-  .preset-picker select {
-    min-width: 210px;
+  .field-pair {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .field,
+  .field-single {
+    min-width: 0;
+  }
+  .field select,
+  .field-single select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .instrument-stage {
+    padding: 0 16px 22px;
+    overflow: visible;
+    min-width: 0;
+    width: 100%;
+  }
+  .meter-strip {
+    margin: 0 -16px;
+  }
+  .verdict-row {
+    padding: 10px 16px;
+  }
+  .readout-rail {
+    padding: 0 16px;
+  }
+  .view-tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-wrap,
+  .modal-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .instrument-bar {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .instrument-identity {
+    gap: 10px;
+  }
+  .bue-logo {
+    height: 28px;
+  }
+  .header-divider {
+    height: 24px;
+  }
+  .instrument-titles h1 {
+    font-size: 14px;
+    line-height: 1.25;
+  }
+  .instrument-meta {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+  .instrument-actions > .btn,
+  .export-wrap > .btn {
+    padding: 0 10px;
+    font-size: 12px;
+  }
+  .control-rail {
+    padding: 14px;
+  }
+  .instrument-stage {
+    padding: 0 14px 20px;
+  }
+  .meter-strip {
+    margin: 0 -14px;
+  }
+  .verdict-row {
+    padding: 10px 14px;
+    gap: 10px;
+  }
+  .verdict-main {
+    flex: 1 1 100%;
+    align-items: flex-start;
+    gap: 9px;
+  }
+  .verdict-line {
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
+  .verdict-quickfix {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .verdict-quickfix .btn {
+    flex: 1 1 140px;
+  }
+  .readout-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0 14px;
+  }
+  .readout-item {
+    padding: 10px 10px 10px 0;
+    margin-right: 0;
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .readout-item:nth-child(2n) {
+    border-right: 0;
+    padding-left: 12px;
+    padding-right: 0;
+  }
+  .readout-item:last-child {
+    grid-column: 1 / -1;
+    border-right: 0;
+    border-bottom: 0;
+    padding: 10px 0;
+  }
+  .readout-num {
+    font-size: 15.5px;
+  }
+  .design-result-strip {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 11px 12px;
+  }
+  .design-result-btns {
+    width: 100%;
+  }
+  .design-result-btns .btn {
+    flex: 1;
+  }
+  .block-head {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .block-tools {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .trace-readout {
+    font-size: 10.5px;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .view-tabs {
+    gap: 16px;
+  }
+  .pane-head {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .plot-canvas {
+    overflow: hidden;
+  }
+  .plot-canvas svg {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+  }
+  .ledger-table {
+    min-width: 480px;
+  }
+  .academic-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 20px;
+  }
+  .modal-backdrop {
+    padding: 10px;
+  }
+  .modal-dialog {
+    max-height: 92vh;
+    width: 100%;
+  }
+  .modal-header,
+  .modal-summary,
+  .modal-quick-presets {
+    padding: 10px 12px;
+  }
+  .modal-header {
+    flex-wrap: wrap;
+  }
+  .modal-table-wrap {
+    padding: 0 12px 12px;
+  }
+  .confirm-toast {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    max-width: none;
   }
 }
 

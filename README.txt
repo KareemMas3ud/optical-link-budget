@@ -5,6 +5,8 @@ Course:        26ECE31H - Fiber Optic Communications (The British University in 
 Module Leader: Dr. Tamer Mekkawy
 Group:         Group 9 - Kareem Mohammed (238253) & Rawan Essam (235067)
 Reference:     Govind P. Agrawal, "Fiber-Optic Communication Systems," 5th Ed. (2021)
+Live Web Tool: https://optical.kareemmas3ud.me/
+Repository:    https://github.com/KareemMas3ud/optical-link-budget
 
 --------------------------------------------------------------------------------
 1. Requirements
@@ -13,7 +15,8 @@ Reference:     Govind P. Agrawal, "Fiber-Optic Communication Systems," 5th Ed. (
 - NumPy (`py -m pip install numpy`) - required for physics engine & GUI
 - Matplotlib (`py -m pip install matplotlib`) - only needed to regenerate
   the 300 DPI report figures (`generate_report_figures.py`)
-- No commercial libraries, no Streamlit/Flask, and no internet connection needed.
+- No commercial libraries, no Streamlit/Flask, and no internet connection needed
+  for local execution (a browser-hosted static mirror is also live online).
 
 --------------------------------------------------------------------------------
 2. Launching the Interactive Web GUI
@@ -24,6 +27,9 @@ Option A (One-click on Windows):
 Option B (Command line):
     py app.py
     (or: py -3.13 app.py)
+
+Option C (Live Online Web Tool - No Installation Required):
+    Open https://optical.kareemmas3ud.me/ in any desktop or mobile browser.
 
 This starts a local zero-dependency HTTP server on http://127.0.0.1:8080/
 (automatically selecting a free port if 8080 is busy) and opens the optical
